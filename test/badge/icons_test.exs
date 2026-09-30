@@ -127,6 +127,35 @@ defmodule Badge.IconsTest do
       end
     end
 
+    test "the Share artwork keeps its shape and edges after packing" do
+      mask = File.read!("assets/icons/badge_share@144x64.mask")
+      packed = alphas(:badge_share, @white)
+
+      assert length(packed) == byte_size(mask)
+
+      for {original, alpha} <- Enum.zip(:erlang.binary_to_list(mask), packed) do
+        assert abs(original - alpha) <= 8
+      end
+
+      assert 0 in packed and 0xFF in packed
+      assert Enum.any?(packed, &(&1 > 0 and &1 < 0xFF)), "the anti-aliased edges are gone"
+    end
+
+    test "the Share artwork takes any tint, not only the baked ones" do
+      tint = 0x123456
+      <<r, g, b>> = <<tint::24>>
+      colours = for <<r2, g2, b2, _a <- Icons.binary(:badge_share, tint)>>, do: {r2, g2, b2}
+
+      assert :lists.usort(colours) == [{r, g, b}]
+    end
+
+    test "only the Share artwork is packed, at four bits a pixel" do
+      assert Icons.packed() == [:badge_share]
+      {w, h} = Icons.size(:badge_share)
+
+      assert byte_size(Icons.packed_binary(:badge_share)) == div(w * h, 2)
+    end
+
     test "an unknown name or an unbaked tint is nil rather than a crash" do
       assert Icons.binary(:nonesuch, @white) == nil
       assert Icons.binary(:wifi, 0x123456) == nil

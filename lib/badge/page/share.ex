@@ -123,7 +123,9 @@ defmodule Badge.Page.Share do
       opened: nil,
       id: nil,
       chip: "",
-      loaded: false
+      loaded: false,
+      # Tinted once here: the artwork is packed, and a frame should not unpack it.
+      art: Icons.binary(@art, Theme.glyph())
     }
   end
 
@@ -338,7 +340,7 @@ defmodule Badge.Page.Share do
   def render(%{mode: :detail, opened: %{profile: profile}}), do: detail_screen(profile)
 
   def render(%{screen: @share_screen} = state) do
-    [art()] ++ share_screen(state) ++ dots(@share_screen)
+    [art(state)] ++ share_screen(state) ++ dots(@share_screen)
   end
 
   def render(%{screen: @sharing_screen} = state),
@@ -516,10 +518,10 @@ defmodule Badge.Page.Share do
   defp badge_icon(nil, _y), do: []
   defp badge_icon(icon, y), do: [Icons.item(icon, @margin, y)]
 
-  defp art do
-    {width, _height} = Icons.size(@art)
+  defp art(%{art: data}) do
+    {width, height} = Icons.size(@art)
 
-    Icons.item(@art, div(Theme.width() - width, 2), @art_y)
+    {:image, div(Theme.width() - width, 2), @art_y, Theme.bg(), {:rgba8888, width, height, data}}
   end
 
   # Before anyone has been heard there is nothing to report but the count.

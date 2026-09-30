@@ -13,6 +13,11 @@ defmodule Badge.Icons do
   AtomGL blends every pixel that is not fully opaque against the background
   colour the item names, so an icon sits cleanly on any skin.
 
+  Masks listed in `packed/0` are too big to bake per tint. They are kept at
+  four bits a pixel and tinted when `binary/2` is called, in any colour, which
+  costs a pass over the image each time: a page drawing one should ask once
+  and keep the result.
+
   Shapes are 32x32 and status icons are 16x16, so read `size/1` rather than
   assuming. Regenerate the files with `tools/icons.py`.
   """
@@ -20,6 +25,8 @@ defmodule Badge.Icons do
   alias Badge.Theme
 
   @tints [0xFFFFFF, 0x000000]
+
+  @packed [:badge_share]
 
   @dir Path.expand("../../assets/icons", __DIR__)
   @shapes [:square, :triangle, :cross, :circle, :clover, :diamond]
@@ -91,6 +98,22 @@ defmodule Badge.Icons do
   @doc "The colours monochrome icons are baked in."
   def tints, do: @tints
 
+  @doc "The masks kept at four bits a pixel and tinted on request."
+  def packed, do: @packed
+
+  @doc "A packed mask's four-bit alpha, two pixels a byte, or nil for any other icon."
+  def packed_binary(name)
+
+  for {name, {width, height, :mask, mask}} <- @icons, name in @packed do
+    rem(width * height, 2) == 0 || raise "packed icon #{name}: odd pixel count"
+
+    packed = for <<a, b <- mask>>, into: <<>>, do: <<div(a + 8, 17)::4, div(b + 8, 17)::4>>
+
+    def packed_binary(unquote(name)), do: unquote(packed)
+  end
+
+  def packed_binary(_name), do: nil
+
   @doc "Whether an icon is monochrome, and so takes a tint."
   def mono?(name)
 
@@ -112,7 +135,11 @@ defmodule Badge.Icons do
     def binary(unquote(name), _tint), do: unquote(data)
   end
 
-  for {name, {_width, _height, :mask, mask}} <- @icons, tint <- @tints do
+  for name <- @packed do
+    def binary(unquote(name), tint), do: expand(packed_binary(unquote(name)), tint)
+  end
+
+  for {name, {_width, _height, :mask, mask}} <- @icons, name not in @packed, tint <- @tints do
     r = div(tint, 0x10000)
     g = div(rem(tint, 0x10000), 0x100)
     b = rem(tint, 0x100)
@@ -122,6 +149,23 @@ defmodule Badge.Icons do
   end
 
   def binary(_name, _tint), do: nil
+
+  # One lookup per packed byte: its two pixels, already tinted.
+  defp expand(packed, tint) do
+    r = div(tint, 0x10000)
+    g = div(rem(tint, 0x10000), 0x100)
+    b = rem(tint, 0x100)
+
+    pairs =
+      :lists.map(
+        fn byte -> <<r, g, b, div(byte, 16) * 17, r, g, b, rem(byte, 16) * 17>> end,
+        :lists.seq(0, 255)
+      )
+
+    table = :erlang.list_to_tuple(pairs)
+
+    :erlang.iolist_to_binary(for <<byte <- packed>>, do: :erlang.element(byte + 1, table))
+  end
 
   @doc "The icon's `{width, height}` in pixels, or nil if there is no such icon."
   def size(name)

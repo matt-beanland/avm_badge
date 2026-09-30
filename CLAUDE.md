@@ -130,6 +130,9 @@ Setup, flashing and the ESP-IDF workflow are in `README.md`.
 - Monochrome icons are `.mask` files baked once per colour in
   `Badge.Icons.tints/0`; a skin's `glyph/0` picks one, and a new glyph colour
   must be added to that list or the icon draws nothing
+- Baking costs 4 bytes a pixel per tint, so large art goes in
+  `Badge.Icons.packed/0` instead: 4 bits a pixel, tinted on each `binary/2`
+  call. The page asks once and keeps it; `Badge.Page.Share` does
 
 ## Pages
 
