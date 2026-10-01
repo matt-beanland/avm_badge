@@ -1,10 +1,10 @@
 # Drives a clustered badge from a host node.
 #
-#     iex --name host@<your-lan-ip> --cookie goatmire -S mix run tools/cluster.exs
+#     iex --name host@<your-lan-ip> --cookie diffo-dev -S mix run tools/cluster.exs
 #
 # or, without the project:
 #
-#     iex --name host@<your-lan-ip> --cookie goatmire tools/cluster.exs
+#     iex --name host@<your-lan-ip> --cookie diffo-dev tools/cluster.exs
 #
 # Then, with the badge's Cluster app joined:
 #

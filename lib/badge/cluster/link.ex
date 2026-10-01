@@ -25,7 +25,7 @@ defmodule Badge.Cluster.Link do
 
   # Matches the cookie tools/cluster.exs uses, so an unprovisioned badge still
   # clusters. The Cluster page edits it into :dist_cookie.
-  @cookie "goatmire"
+  @cookie "diffo-dev"
 
   @tick 1_000
 

@@ -90,7 +90,7 @@ defmodule Badge.Cluster.LinkTest do
 
   describe "cookie/1" do
     test "falls back to the compiled default when nothing is provisioned" do
-      assert Link.cookie(nil) == "goatmire"
+      assert Link.cookie(nil) == "diffo-dev"
     end
 
     test "prefers a provisioned cookie" do
@@ -98,11 +98,11 @@ defmodule Badge.Cluster.LinkTest do
     end
 
     test "treats an empty key as unprovisioned, rather than clustering on no secret" do
-      assert Link.cookie("") == "goatmire"
+      assert Link.cookie("") == "diffo-dev"
     end
 
     test "names the default, so the page can show it before the link is up" do
-      assert Link.default_cookie() == "goatmire"
+      assert Link.default_cookie() == "diffo-dev"
     end
   end
 end

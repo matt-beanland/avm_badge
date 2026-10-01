@@ -8,7 +8,7 @@ defmodule Badge.Page.ClusterTest do
     base = %{
       state: :off,
       node: nil,
-      cookie: "goatmire",
+      cookie: "diffo-dev",
       ip: nil,
       peers: [],
       reason: nil
@@ -73,11 +73,11 @@ defmodule Badge.Page.ClusterTest do
     end
 
     test "shows the cookie, since a host cannot guess it" do
-      assert says?(up(), "goatmire")
+      assert says?(up(), "diffo-dev")
     end
 
     test "shows the cookie while down too, so it can be read before joining" do
-      assert says?(page(%{}), "goatmire")
+      assert says?(page(%{}), "diffo-dev")
     end
 
     test "has no name to show while the node is down" do
@@ -157,24 +157,24 @@ defmodule Badge.Page.ClusterTest do
     end
 
     test "Enter opens the stored cookie for editing" do
-      assert says?(editing(), "goatmire_")
+      assert says?(editing(), "diffo-dev_")
     end
 
     test "typing changes it, and an S types rather than stopping the cluster" do
-      assert says?(typed(editing(), "S"), "goatmireS_")
+      assert says?(typed(editing(), "S"), "diffo-devS_")
     end
 
     test "backspace removes the character before the caret" do
       {:ok, state} = Cluster.handle_key({:edit, :backspace}, editing())
 
-      assert says?(state, "goatmir_")
+      assert says?(state, "diffo-de_")
     end
 
     test "Esc closes the field and leaves the stored cookie showing" do
       {:ok, state} = Cluster.handle_key({:nav, :home}, typed(editing(), "X"))
 
       assert state.field == nil
-      assert says?(state, "goatmire")
+      assert says?(state, "diffo-dev")
     end
 
     test "Enter commits and closes the field" do
@@ -195,7 +195,7 @@ defmodule Badge.Page.ClusterTest do
     test "stops accepting once the cookie has filled the field" do
       long = typed(editing(), :binary.copy("x", 60))
 
-      assert says?(long, "goatmire" <> :binary.copy("x", 16) <> "_")
+      assert says?(long, "diffo-dev" <> :binary.copy("x", 15) <> "_")
     end
 
     test "keeps every row inside the panel while typing" do
