@@ -33,7 +33,7 @@ defmodule Badge.Ntp.Source do
       kind: kind,
       interval: interval,
       burst: burst,
-      due: 0,
+      due: nil,
       busy: nil,
       reach: 0,
       filter: [],
@@ -43,7 +43,9 @@ defmodule Badge.Ntp.Source do
 
   @doc "Whether the source should be asked at monotonic time `now`."
   @spec due?(t, integer) :: boolean
-  def due?(source, now), do: source.busy == nil and now >= source.due
+  def due?(%{busy: nil, due: nil}, _now), do: true
+  def due?(%{busy: nil, due: due}, now), do: now >= due
+  def due?(_busy, _now), do: false
 
   @doc "Records that a query is in flight, held as `busy`, and schedules the next."
   @spec asked(t, term, integer) :: t
@@ -55,7 +57,8 @@ defmodule Badge.Ntp.Source do
 
   @doc "Brings the next query forward to `now`."
   @spec hurry(t, integer) :: t
-  def hurry(source, now), do: %{source | due: min(source.due, now)}
+  def hurry(%{due: due} = source, now) when due != nil and due <= now, do: source
+  def hurry(source, now), do: %{source | due: now}
 
   @doc "Records the result of the query in flight, at system time `now`."
   @spec answered(t, {:ok, Sample.t()} | {:error, term}, integer) :: t

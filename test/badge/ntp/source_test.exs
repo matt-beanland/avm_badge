@@ -22,6 +22,10 @@ defmodule Badge.Ntp.SourceTest do
     assert source.due == 68_000
   end
 
+  test "a new source is due at once, whatever the monotonic clock reads" do
+    assert Source.due?(Source.new("pool", :external, 64_000), -576_460_747_653)
+  end
+
   test "a source is not asked again while a query is in flight" do
     source = Source.asked(Source.new("gulou", :internal, 1_000), :q, 0)
 
