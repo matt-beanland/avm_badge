@@ -18,7 +18,9 @@ defmodule Badge.Ntp.ScaleTest do
 
     columns = Enum.map(offsets, &Scale.x/1)
     assert columns == Enum.sort(columns)
-    assert Enum.map(offsets, &(Scale.centre() - Scale.x(-&1))) == Enum.map(columns, &(&1 - Scale.centre()))
+
+    assert Enum.map(offsets, &(Scale.centre() - Scale.x(-&1))) ==
+             Enum.map(columns, &(&1 - Scale.centre()))
   end
 
   test "1970 seen from 2026 fits on the panel" do

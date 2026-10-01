@@ -14,14 +14,24 @@ defmodule Badge.Page.Ntp do
   synced or not, the agreeing sources out of those answering (and out of
   those configured, when some are silent), the badge's stratum and the
   bound. R polls the public servers again, at most once every 16 s.
+
+  While the page is open it disciplines the system clock once a second, as
+  `Badge.Ntp.Discipline` decides: a step through
+  `:atomvm.posix_clock_settime/2`, or a slew of at most 500 µs. A step
+  clears every source's samples and tells `Badge.Wifi` the clock is set; a
+  slew moves them with the clock. The panic threshold comes from the
+  `ntp_panic` setting, in seconds; P turns it off or on for the visit.
   """
 
   use Badge.Page
+
+  @compile {:no_warn_undefined, :atomvm}
 
   alias Badge.Allen
   alias Badge.Clock
   alias Badge.Nav
   alias Badge.Ntp
+  alias Badge.Ntp.Discipline
   alias Badge.Ntp.Scale
   alias Badge.Ntp.Select
   alias Badge.Ntp.Source
@@ -44,6 +54,8 @@ defmodule Badge.Page.Ntp do
   @columns 38
   @wifi_every 60_000
   @resync_gap 16_000
+  @discipline_every 1_000
+  @phi_ppm 15
 
   @impl true
   def title, do: "NTP"
@@ -60,6 +72,9 @@ defmodule Badge.Page.Ntp do
       local: :unknown,
       wifi_at: nil,
       resync_at: nil,
+      discipline: Discipline.new(),
+      disciplined_at: nil,
+      note: nil,
       now: :erlang.system_time(:microsecond),
       mono: 0
     }
@@ -73,6 +88,7 @@ defmodule Badge.Page.Ntp do
     |> configure()
     |> check_wifi(mono)
     |> ask(mono)
+    |> discipline(mono)
   end
 
   @impl true
@@ -120,6 +136,10 @@ defmodule Badge.Page.Ntp do
     end
   end
 
+  def handle_key({:char, char}, state) when char == ?p or char == ?P do
+    {:ok, %{state | discipline: Discipline.toggle_panic(state.discipline)}}
+  end
+
   def handle_key(_event, _state), do: :ignore
 
   @impl true
@@ -142,11 +162,19 @@ defmodule Badge.Page.Ntp do
         name -> :erlang.atom_to_binary(name, :latin1)
       end
 
-    %{state | sources: Ntp.sources(Nvs.get(:ntp_hosts)), node: node, ready: true}
+    %{
+      state
+      | sources: Ntp.sources(Nvs.get(:ntp_hosts)),
+        discipline: Discipline.new(Discipline.threshold(Nvs.get(:ntp_panic))),
+        node: node,
+        ready: true
+    }
   end
 
   defp check_wifi(%{wifi_at: at} = state, mono) when at != nil and mono - at < @wifi_every,
     do: state
+
+  defp check_wifi(%{local: %{}} = state, mono), do: %{state | wifi_at: mono}
 
   defp check_wifi(state, mono) do
     local = if Wifi.status().synced, do: :known, else: :unknown
@@ -168,20 +196,98 @@ defmodule Badge.Page.Ntp do
     %{state | sources: sources}
   end
 
-  @impl true
-  def render(state) do
-    entries =
-      :lists.foldr(
-        fn source, acc ->
-          case Source.best(source, state.now) do
-            nil -> acc
-            best -> [:maps.put(:id, source.host, best) | acc]
-          end
+  defp discipline(%{disciplined_at: at} = state, mono)
+       when at != nil and mono - at < @discipline_every,
+       do: state
+
+  defp discipline(state, mono) do
+    selection = Select.select(entries(state))
+    {action, next} = Discipline.decide(state.discipline, selection, state.local != :unknown, mono)
+
+    act(action, %{state | discipline: next, disciplined_at: mono}, selection, mono)
+  end
+
+  defp act({:step, offset}, state, selection, _mono) do
+    set_clock(offset)
+    :io.format(~c"Ntp: stepped ~p us~n", [offset])
+    Wifi.clock_set()
+    leave(state)
+
+    now = :erlang.system_time(:microsecond)
+    error = div(selection.result.to - selection.result.from, 2)
+
+    %{
+      state
+      | sources: :lists.map(&Source.flush/1, state.sources),
+        local: %{at: now, error: error},
+        now: now,
+        note: nil
+    }
+  end
+
+  defp act({:slew, micros}, state, _selection, _mono) do
+    set_clock(micros)
+
+    %{
+      state
+      | sources: :lists.map(&Source.shift_samples(&1, micros), state.sources),
+        now: :erlang.system_time(:microsecond),
+        note: nil
+    }
+  end
+
+  defp act(:spike, state, _selection, mono) do
+    sources =
+      :lists.map(
+        fn
+          %{kind: :external} = source -> Source.hurry(source, mono)
+          source -> source
         end,
-        [],
         state.sources
       )
 
+    %{state | sources: sources, note: :spike}
+  end
+
+  defp act(:wait, state, _selection, _mono), do: %{state | note: :spike}
+
+  defp act(:panic, %{note: :panic} = state, _selection, _mono), do: state
+
+  defp act(:panic, state, selection, _mono) do
+    :io.format(~c"Ntp: refusing a step of ~p us~n", [
+      div(selection.result.from + selection.result.to, 2)
+    ])
+
+    %{state | note: :panic}
+  end
+
+  defp act(:none, state, _selection, _mono), do: %{state | note: nil}
+
+  defp set_clock(micros) do
+    target = :erlang.system_time(:microsecond) + micros
+
+    :atomvm.posix_clock_settime(
+      :realtime,
+      {div(target, 1_000_000), rem(target, 1_000_000) * 1_000}
+    )
+  end
+
+  defp entries(state) do
+    :lists.foldr(
+      fn source, acc ->
+        case Source.best(source, state.now) do
+          nil -> acc
+          best -> [:maps.put(:id, source.host, best) | acc]
+        end
+      end,
+      [],
+      state.sources
+    )
+  end
+
+  @impl true
+  def render(state) do
+    entries = entries(state)
     selection = Select.select(entries)
     centre = centre(selection)
     rows = rows(state, entries, selection)
@@ -189,7 +295,9 @@ defmodule Badge.Page.Ntp do
 
     {items, _y} =
       :lists.foldl(
-        fn row, {items, y} -> {items ++ row_items(row, selection, centre, placed, y), y + @pitch} end,
+        fn row, {items, y} ->
+          {items ++ row_items(row, selection, centre, placed, y), y + @pitch}
+        end,
         {[], @top},
         rows
       )
@@ -197,7 +305,7 @@ defmodule Badge.Page.Ntp do
     items ++
       output(state, selection, centre, placed) ++
       axis() ++
-      Nav.hint([{"R", "resync"}], @help_y, Theme.dim()) ++
+      Nav.hint([{"R", "resync"}, {"P", panic(state.discipline)}], @help_y, Theme.dim()) ++
       centre_line()
   end
 
@@ -209,7 +317,7 @@ defmodule Badge.Page.Ntp do
       label: state.node,
       kind: :local,
       tally: " ",
-      interval: if(state.local == :known, do: %{from: 0, to: 1}, else: :unknown),
+      interval: local_interval(state),
       note: "unknown"
     }
 
@@ -233,6 +341,14 @@ defmodule Badge.Page.Ntp do
     waiting = :lists.filter(&(&1.interval == nil), all)
 
     unknown ++ :lists.sort(&before?/2, timed) ++ waiting
+  end
+
+  defp local_interval(%{local: :unknown}), do: :unknown
+  defp local_interval(%{local: :known}), do: %{from: 0, to: 1}
+
+  defp local_interval(%{local: %{at: at, error: error}, now: now}) do
+    grown = error + div(max(now - at, 0) * @phi_ppm, 1_000_000)
+    %{from: -grown, to: grown + 1}
   end
 
   defp before?(a, b), do: {a.interval.from, a.interval.to} <= {b.interval.from, b.interval.to}
@@ -278,7 +394,8 @@ defmodule Badge.Page.Ntp do
     [
       {:text, 8, y, :default16px, tally_colour(row.tally), Theme.bg(), row.tally},
       {:text, 8 + 2 * @char_w, y, :default16px, Theme.fg(), Theme.bg(), letter(row, selection)},
-      {:text, 8 + 4 * @char_w, y, :default16px, label_colour(row), Theme.bg(), clip(row.label, room)},
+      {:text, 8 + 4 * @char_w, y, :default16px, label_colour(row), Theme.bg(),
+       clip(row.label, room)},
       {:text, Readout.right_x(right), y, :default16px, Theme.dim(), Theme.bg(), right}
     ] ++ bar(row, centre, placed, y + @bar_dy)
   end
@@ -286,7 +403,9 @@ defmodule Badge.Page.Ntp do
   defp bounds_text(%{interval: %{from: from, to: to}}, centre) when to - from == 1,
     do: point(from - centre)
 
-  defp bounds_text(%{interval: %{from: from, to: to}}, centre), do: span(from - centre, to - centre)
+  defp bounds_text(%{interval: %{from: from, to: to}}, centre),
+    do: span(from - centre, to - centre)
+
   defp bounds_text(row, _centre), do: row.note
 
   defp letter(%{interval: :unknown}, _selection), do: "?"
@@ -305,7 +424,9 @@ defmodule Badge.Page.Ntp do
     x = :maps.get(from - centre, placed)
     w = max(:maps.get(to - centre, placed) - x, 1)
 
-    if row.tally == "x", do: hollow(x, y, w, Theme.alert()), else: [{:rect, x, y, w, @bar_h, kind_colour(row.kind)}]
+    if row.tally == "x",
+      do: hollow(x, y, w, Theme.alert()),
+      else: [{:rect, x, y, w, @bar_h, kind_colour(row.kind)}]
   end
 
   defp bar(_row, _centre, _placed, _y), do: []
@@ -346,7 +467,7 @@ defmodule Badge.Page.Ntp do
       {:text, 8, @out_y, :default16px, Theme.fg(), Theme.bg(), time},
       {:text, Readout.right_x(bounds), @out_y, :default16px, Theme.dim(), Theme.bg(), bounds},
       {:text, 8, @verdict_y, :default16px, colour, Theme.bg(),
-       Text.cp437(verdict(selection, length(state.sources)))}
+       Text.cp437(verdict(selection, length(state.sources)) <> remark(state.note))}
     ] ++ bar
   end
 
@@ -360,8 +481,8 @@ defmodule Badge.Page.Ntp do
             fn x ->
               [
                 {:rect, x, @axis_y - 2, 1, 5, Theme.dim()},
-                {:text, x - div(byte_size(label) * @char_w, 2), @axis_y + 3, :default16px, Theme.dim(),
-                 Theme.bg(), label}
+                {:text, x - div(byte_size(label) * @char_w, 2), @axis_y + 3, :default16px,
+                 Theme.dim(), Theme.bg(), label}
               ]
             end,
             [Scale.x(-micros), Scale.x(micros)]
@@ -395,7 +516,10 @@ defmodule Badge.Page.Ntp do
       :erlang.integer_to_binary(selection.size) <>
         "/" <>
         :erlang.integer_to_binary(selection.count) <>
-        if(selection.count < configured, do: " of " <> :erlang.integer_to_binary(configured), else: "")
+        if(selection.count < configured,
+          do: " of " <> :erlang.integer_to_binary(configured),
+          else: ""
+        )
 
     case selection do
       %{status: :synced, result: result, peer: peer} ->
@@ -456,7 +580,8 @@ defmodule Badge.Page.Ntp do
     part = rem(hundredths, 100)
     pad = if part < 10, do: "0", else: ""
 
-    :erlang.integer_to_binary(div(hundredths, 100)) <> "." <> pad <> :erlang.integer_to_binary(part)
+    :erlang.integer_to_binary(div(hundredths, 100)) <>
+      "." <> pad <> :erlang.integer_to_binary(part)
   end
 
   @doc "System time in microseconds as `HH:MM:SS.mmmZ`."
@@ -474,6 +599,13 @@ defmodule Badge.Page.Ntp do
     Clock.format(div(micros, 1_000_000)) <> "." <> pad <> :erlang.integer_to_binary(millis) <> "Z"
   end
 
+  defp remark(:spike), do: " spike"
+  defp remark(:panic), do: " panic"
+  defp remark(nil), do: ""
+
+  defp panic(%{panic: true}), do: "panic on"
+  defp panic(_off), do: "panic off"
+
   defp clip(text, room) when byte_size(text) <= room, do: text
   defp clip(text, room), do: :binary.part(text, 0, max(room, 0))
 
@@ -488,8 +620,9 @@ defmodule Badge.Page.Ntp do
   defp tally_colour("*"), do: Theme.ok()
   defp tally_colour(_tally), do: Theme.fg()
 
-  defp level_colour(%{status: :synced, size: size, count: count}) when count >= 3 and size == count,
-    do: Theme.ok()
+  defp level_colour(%{status: :synced, size: size, count: count})
+       when count >= 3 and size == count,
+       do: Theme.ok()
 
   defp level_colour(%{status: :synced, count: count}) when count >= 3, do: Theme.accent()
   defp level_colour(%{status: :synced}), do: Theme.warn()
@@ -497,7 +630,12 @@ defmodule Badge.Page.Ntp do
 
   defp describe(nil), do: ""
   defp describe(:ok), do: ""
-  defp describe({:error, reason}) when is_atom(reason), do: :erlang.atom_to_binary(reason, :latin1)
-  defp describe({:error, {tag, _detail}}) when is_atom(tag), do: :erlang.atom_to_binary(tag, :latin1)
+
+  defp describe({:error, reason}) when is_atom(reason),
+    do: :erlang.atom_to_binary(reason, :latin1)
+
+  defp describe({:error, {tag, _detail}}) when is_atom(tag),
+    do: :erlang.atom_to_binary(tag, :latin1)
+
   defp describe(_error), do: "error"
 end

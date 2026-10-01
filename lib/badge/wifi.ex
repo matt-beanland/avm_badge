@@ -52,6 +52,12 @@ defmodule Badge.Wifi do
     GenServer.call(__MODULE__, :status)
   end
 
+  @doc "Tells Wifi the clock was set by something other than SNTP, as the NTP page does."
+  @spec clock_set() :: :ok
+  def clock_set do
+    GenServer.cast(__MODULE__, :clock_set)
+  end
+
   @doc "Starts a scan for nearby networks; results arrive asynchronously."
   @spec scan() :: :ok
   def scan do
@@ -194,6 +200,8 @@ defmodule Badge.Wifi do
   end
 
   @impl true
+  def handle_cast(:clock_set, state), do: handle_info({:synchronized, :ntp}, state)
+
   def handle_cast(:scan, %{scanning: true} = state), do: {:noreply, state}
 
   def handle_cast(:scan, state) do

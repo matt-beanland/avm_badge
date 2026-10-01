@@ -41,7 +41,9 @@ defmodule Badge.Ntp do
   @spec sources(binary | nil) :: [Source.t()]
   def sources(setting) do
     internal = :lists.map(&internal/1, words(setting || <<>>))
-    external = :lists.map(&Source.new(&1, :external, @external_interval, @external_burst), @external)
+
+    external =
+      :lists.map(&Source.new(&1, :external, @external_interval, @external_burst), @external)
 
     :lists.sublist(internal ++ external, @most)
   end
@@ -61,7 +63,10 @@ defmodule Badge.Ntp do
   end
 
   defp digits([], acc), do: acc
-  defp digits([char | rest], acc) when char >= ?0 and char <= ?9, do: digits(rest, acc * 10 + char - ?0)
+
+  defp digits([char | rest], acc) when char >= ?0 and char <= ?9,
+    do: digits(rest, acc * 10 + char - ?0)
+
   defp digits(_other, _acc), do: 0
 
   defp words(setting) do

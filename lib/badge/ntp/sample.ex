@@ -35,7 +35,14 @@ defmodule Badge.Ntp.Sample do
     delay = max(t4 - t1 - (t3 - t2), 0)
     error = div(delay, 2) + root
 
-    %{offset: offset, delay: delay, root: root, from: offset - error, to: offset + error + 1, at: t4}
+    %{
+      offset: offset,
+      delay: delay,
+      root: root,
+      from: offset - error,
+      to: offset + error + 1,
+      at: t4
+    }
   end
 
   @doc "The sample's interval at system time `now`, widened by 15 ppm of its age."

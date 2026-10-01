@@ -17,6 +17,7 @@ badge.
     --utc-offset  BADGE_UTC_OFFSET    minutes, -720..840; a fallback for time_zone
     --chat-url    AVM_BADGE_SERVER_URL
     --ntp-hosts   BADGE_NTP_HOSTS     internal NTP sources, "host[/seconds] ..."
+    --ntp-panic   BADGE_NTP_PANIC     largest step after the first, seconds; 0 off
 
 `--forget-wifi` drops the saved network, keeping everything else.
 
@@ -55,6 +56,7 @@ SETTINGS = [
     ("chat_url", "--chat-url", "AVM_BADGE_SERVER_URL"),
     ("utc_offset_m", "--utc-offset", "BADGE_UTC_OFFSET"),
     ("ntp_hosts", "--ntp-hosts", "BADGE_NTP_HOSTS"),
+    ("ntp_panic", "--ntp-panic", "BADGE_NTP_PANIC"),
 ]
 
 WIFI = ("wifi_ssid", "wifi_psk")

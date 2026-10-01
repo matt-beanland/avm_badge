@@ -39,11 +39,20 @@ defmodule Badge.Ntp.Packet do
         sent
       ) do
     cond do
-      (flags &&& 7) != 4 -> {:error, :not_a_server_reply}
-      stratum == 0 -> {:error, {:kiss_of_death, ref_id}}
-      origin != to_ntp(sent) -> {:error, :wrong_origin}
-      transmitted == 0 -> {:error, :no_transmit_time}
-      true -> {:ok, reply(flags, stratum, received, transmitted, root_delay, root_dispersion, ref_id)}
+      (flags &&& 7) != 4 ->
+        {:error, :not_a_server_reply}
+
+      stratum == 0 ->
+        {:error, {:kiss_of_death, ref_id}}
+
+      origin != to_ntp(sent) ->
+        {:error, :wrong_origin}
+
+      transmitted == 0 ->
+        {:error, :no_transmit_time}
+
+      true ->
+        {:ok, reply(flags, stratum, received, transmitted, root_delay, root_dispersion, ref_id)}
     end
   end
 

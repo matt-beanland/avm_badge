@@ -86,6 +86,29 @@ defmodule Badge.Ntp.Source do
 
   def answered(source, error, _now), do: failed(source, error)
 
+  @doc "Forgets every sample and any query in flight, as after the local clock is stepped."
+  @spec flush(t) :: t
+  def flush(source), do: %{source | filter: [], busy: nil}
+
+  @doc "Moves every sample by `-micros`, as after the local clock is slewed by `micros`."
+  @spec shift_samples(t, integer) :: t
+  def shift_samples(source, micros) do
+    moved =
+      :lists.map(
+        fn sample ->
+          %{
+            sample
+            | offset: sample.offset - micros,
+              from: sample.from - micros,
+              to: sample.to - micros
+          }
+        end,
+        source.filter
+      )
+
+    %{source | filter: moved}
+  end
+
   @doc "`:pending` before the first result, `:unreachable` after eight failures, else `:reachable`."
   @spec status(t) :: :pending | :unreachable | :reachable
   def status(%{last: nil}), do: :pending
@@ -116,10 +139,17 @@ defmodule Badge.Ntp.Source do
   defp lowest([]), do: nil
 
   defp lowest([first | rest]) do
-    :lists.foldl(fn sample, best -> if sample.delay < best.delay, do: sample, else: best end, first, rest)
+    :lists.foldl(
+      fn sample, best -> if sample.delay < best.delay, do: sample, else: best end,
+      first,
+      rest
+    )
   end
 
   defp address?(host) do
-    :lists.all(fn char -> char == ?. or (char >= ?0 and char <= ?9) end, :erlang.binary_to_list(host))
+    :lists.all(
+      fn char -> char == ?. or (char >= ?0 and char <= ?9) end,
+      :erlang.binary_to_list(host)
+    )
   end
 end

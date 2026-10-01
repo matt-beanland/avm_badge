@@ -96,7 +96,11 @@ defmodule Badge.Ntp.Select do
   defp intersect(entry, acc), do: %{from: max(acc.from, entry.from), to: min(acc.to, entry.to)}
 
   defp peer([first | rest]) do
-    :lists.foldl(fn entry, best -> if rank(entry) < rank(best), do: entry, else: best end, first, rest)
+    :lists.foldl(
+      fn entry, best -> if rank(entry) < rank(best), do: entry, else: best end,
+      first,
+      rest
+    )
   end
 
   defp rank(entry), do: {:maps.get(:stratum, entry, 16), :maps.get(:root, entry, 0)}

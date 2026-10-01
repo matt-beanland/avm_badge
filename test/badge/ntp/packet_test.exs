@@ -56,7 +56,8 @@ defmodule Badge.Ntp.PacketTest do
 
   test "root distance is half the root delay plus the root dispersion" do
     # 0x0001_0000 is one second; 0x0000_8000 half of one.
-    {:ok, server} = Packet.parse(reply(root_delay: 0x0000_8000, root_dispersion: 0x0001_0000), @sent)
+    {:ok, server} =
+      Packet.parse(reply(root_delay: 0x0000_8000, root_dispersion: 0x0001_0000), @sent)
 
     assert server.root == 250_000 + 1_000_000
   end

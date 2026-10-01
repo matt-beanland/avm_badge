@@ -6,14 +6,21 @@ defmodule Badge.NtpTest do
   test "without ntp_hosts the public servers are the sources" do
     sources = Ntp.sources(nil)
 
-    assert Enum.map(sources, & &1.host) == ["time.cloudflare.com", "time.google.com", "se.pool.ntp.org"]
+    assert Enum.map(sources, & &1.host) == [
+             "time.cloudflare.com",
+             "time.google.com",
+             "se.pool.ntp.org"
+           ]
+
     assert Enum.all?(sources, &(&1.kind == :external and &1.interval == 64_000 and &1.burst == 3))
   end
 
   test "ntp_hosts come first as internal sources, polled every second" do
     [gulou | rest] = Ntp.sources("192.168.1.50")
 
-    assert {gulou.host, gulou.kind, gulou.interval, gulou.burst} == {"192.168.1.50", :internal, 1_000, 0}
+    assert {gulou.host, gulou.kind, gulou.interval, gulou.burst} ==
+             {"192.168.1.50", :internal, 1_000, 0}
+
     assert length(rest) == 3
   end
 
