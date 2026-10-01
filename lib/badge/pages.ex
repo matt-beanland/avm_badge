@@ -17,16 +17,12 @@ defmodule Badge.Pages do
   @pages [
     Badge.Page.Name,
     Badge.Page.Share,
-    Badge.Page.Chat,
-    Badge.Page.Schedule,
     Badge.Page.About,
     Badge.Page.Settings,
     Badge.Page.Led,
     Badge.Page.Sensors,
     Badge.Page.Agent,
     Badge.Page.Cluster,
-    Badge.Page.ConnectFour,
-    Badge.Page.Raycaster,
     Badge.Page.Console
   ]
 

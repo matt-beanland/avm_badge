@@ -22,8 +22,7 @@ defmodule Badge.Sim.Board do
       {Badge.Backlight, :ok},
       {Badge.Pixels, :sim_spi},
       {Badge.Sensors, :ok},
-      {Badge.Power, :ok},
-      {Badge.Schedule.Link, :ok}
+      {Badge.Power, :ok}
     ]
 
     children = [Nvs] ++ Fakes.children() ++ hardware ++ [Display, {Badge.UI, {Display, Display}}]

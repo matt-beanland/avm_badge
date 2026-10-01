@@ -1,7 +1,6 @@
 defmodule Badge.Sim.Fakes do
   @moduledoc "External services and input processes that do not run on the host."
 
-  alias Badge.Chat.Link.State
   alias Badge.Sim.Fake
 
   def children do
@@ -56,7 +55,6 @@ defmodule Badge.Sim.Fakes do
           trial: false
         }
       end),
-      fake(Badge.Chat.Link, fn :status, _ -> State.status(State.new("ws://sim")) end),
       fake(
         Badge.Cluster.Link,
         fn :status, d ->

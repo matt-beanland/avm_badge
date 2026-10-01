@@ -17,6 +17,5 @@ defmodule Badge.Sim.ProfileNvsTest do
 
     assert profile.name == :binary.copy("x", 64)
     assert profile.company == "Protolux"
-    assert Profile.chat_name(profile) == :binary.copy("x", 16)
   end
 end

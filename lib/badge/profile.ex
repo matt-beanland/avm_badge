@@ -49,7 +49,6 @@ defmodule Badge.Profile do
 
   @required :name
   @placeholder "Nameless"
-  @chat_name_bytes 16
 
   # The one field that points at another rather than holding a value, and the
   # links it may point at, as {key, stored name}.
@@ -120,28 +119,6 @@ defmodule Badge.Profile do
     case Map.get(profile, @required) do
       value when value in [nil, ""] -> @placeholder
       value -> value
-    end
-  end
-
-  @doc "The shortened name used by chat, leaving room for a message."
-  def chat_name(profile), do: short_chat_name(display_name(profile))
-
-  @doc "Cuts a chat name at the last space within 16 bytes, or at 16 for one long word."
-  def short_chat_name(name) when byte_size(name) <= @chat_name_bytes, do: name
-
-  def short_chat_name(name) do
-    case last_space(name, @chat_name_bytes) do
-      0 -> :binary.part(name, 0, @chat_name_bytes)
-      at -> :binary.part(name, 0, at)
-    end
-  end
-
-  defp last_space(_name, 0), do: 0
-
-  defp last_space(name, at) do
-    case :binary.at(name, at) do
-      ?\s -> at
-      _other -> last_space(name, at - 1)
     end
   end
 

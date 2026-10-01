@@ -53,8 +53,8 @@ You should see the AtomVM banner, then `Badge: starting`, then the home grid
 on the panel. The six shape keys open the pages; the arrows page the grid.
 
 To get the badge online, open Settings (the diamond key), go to the WiFi tab,
-pick a network and type its passphrase. The badge remembers it. The clock,
-chat and Settings → Update all need a network.
+pick a network and type its passphrase. The badge remembers it. The clock and
+Settings → Update need a network.
 
 `mix badge.assets --flash` writes the assets partition, which holds the extra
 fonts, the splash logo and the rickroll frames. It is **not** updated over the
@@ -120,21 +120,6 @@ provision them into NVS, where they override the built-in pair:
     export BADGE_NH_KEY=...
     export BADGE_NH_SECRET=...
     python3 tools/provision.py
-
-## Chat server
-
-Badges talk to `wss://badge-chat.protolux.io` unless told otherwise. To point
-one at a server on your bench:
-
-    export AVM_BADGE_SERVER_URL=ws://192.168.1.50:4000
-    tools/provision.py
-
-Give a base only — scheme, host and optional port. The scheme picks the
-transport: `wss://` verifies against the public certificate authorities built
-into the image, so a Let's Encrypt certificate needs no work on the badge;
-`ws://` runs in the clear, which is what makes a local server reachable without
-certificates or a tunnel. `mix phx.server` in `avm_badge_server` already
-listens on `0.0.0.0:4000`.
 
 ## Flash layout
 

@@ -63,34 +63,26 @@ defmodule Badge.PagesTest do
       assert for({_key, module} <- Pages.screen(0), do: module) == [
                Badge.Page.Name,
                Badge.Page.Share,
-               Badge.Page.Chat,
-               Badge.Page.Schedule,
                Badge.Page.About,
-               Badge.Page.Settings
+               Badge.Page.Settings,
+               Badge.Page.Led,
+               Badge.Page.Sensors
              ]
     end
 
     test "the rest sit on the second screen" do
+      assert Pages.screens() == 2
+
       assert for({_key, module} <- Pages.screen(1), do: module) == [
-               Badge.Page.Led,
-               Badge.Page.Sensors,
                Badge.Page.Agent,
                Badge.Page.Cluster,
-               Badge.Page.ConnectFour,
-               Badge.Page.Raycaster
+               Badge.Page.Console,
+               nil,
+               nil,
+               nil
              ]
 
-      assert Pages.for_key(:diamond, 1) == Badge.Page.Raycaster
-    end
-
-    test "the console starts a third screen" do
-      assert Pages.screens() == 3
-
-      assert for({_key, module} <- Pages.screen(2), do: module) == [
-               Badge.Page.Console | List.duplicate(nil, 5)
-             ]
-
-      assert Pages.for_key(:square, 2) == Badge.Page.Console
+      assert Pages.for_key(:cross, 1) == Badge.Page.Console
     end
 
     test "the text page is kept but unreachable, an example rather than a page" do

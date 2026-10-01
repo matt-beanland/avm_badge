@@ -54,10 +54,10 @@ defmodule Badge.Page.ConsoleTest do
   end
 
   describe "identity" do
-    test "sits on the square of the third home screen" do
+    test "sits on the cross of the second home screen" do
       assert Console.title() == "Console"
       assert Console.icon() == :square
-      assert Badge.Pages.for_key(:square, 2) == Console
+      assert Badge.Pages.for_key(:cross, 1) == Console
     end
   end
 

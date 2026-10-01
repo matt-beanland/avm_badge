@@ -184,28 +184,17 @@ Setup, flashing and the ESP-IDF workflow are in `README.md`.
   interpolation, `raise` without parens, `def`. Output is `Kernel.inspect/1`,
   which exavmlib ships
 
-## Chat transport
+## Websocket
 
-- The chat rides a websocket from the `atomvm_websocket_client` ESP-IDF
-  component. `Badge.Chat.Link.State` holds every transition as plain data and
-  is the only part testable on the host, so put logic there and keep the
-  GenServer a shell
-- Two channels on one socket: `rooms:badge` and `chat:<slug>`. Each is joined
-  with its own `join_ref`; **a rejoin must not reuse the old one** or Phoenix
-  drops the channel's messages silently
-- **Replies are dispatched by ref, not by topic** — a room carries both a join
-  reply and a `new_msg` reply on the same topic
+- NervesHub rides a websocket from the `atomvm_websocket_client` ESP-IDF
+  component
 - Match `{:websocket, _port, ...}` **without pinning the port**: the driver's
   port term is not the one `open_port` returned, and a pinned match drops
   every message silently
-- The socket opens only after `Wifi.status()` shows `synced: true` — at the
-  epoch every certificate is "not yet valid"
-- The server is the `chat_url` NVS key, falling back to
-  `wss://badge-chat.protolux.io`. The scheme picks the transport: `wss://`
-  verifies against the ESP-IDF CA bundle, `ws://` runs in the clear for a
-  server on the bench
-- `Badge.Chat.Link` and `Badge.Update.Link` are page-scoped: they connect on
-  entry and disconnect on the way out
+- A `wss://` socket opens only after `Wifi.status()` shows `synced: true` — at
+  the epoch every certificate is "not yet valid"
+- `Badge.Update.Link` is page-scoped: it connects on entry and disconnects on
+  the way out
 
 ## Clustering
 
@@ -223,18 +212,12 @@ Setup, flashing and the ESP-IDF workflow are in `README.md`.
   work (it needs `erpc`). Drive it from a local `iex` holding
   `tools/cluster.exs`
 
-## Schedule
+## TLS from Erlang
 
-- The programme is **compiled in**: `assets/schedule.json` is parsed on the
-  host and packed into `Badge.Schedule.Link`. Nothing is parsed on the device.
-  `mix badge.schedule` refreshes the file; commit it and flash
-- Times are Swedish local, converted through `Badge.Zone` for
-  `Europe/Stockholm`, not the badge's own zone. A clock before 2024 is unset
-- **The over-the-air refresh is off (`@fetch false`)**: this VM's `:ssl` does
-  not survive a handshake to goatmire.com — `verify_peer` corrupts the heap
-  right after certificate validation, `verify_none` spins the task watchdog.
-  The chat's TLS is unaffected: it runs in the websocket component's own task,
-  not through `otp_ssl`. Fix in the VM, then flip the attribute
+- This VM's `:ssl` does not survive a handshake to some servers —
+  `verify_peer` has corrupted the heap right after certificate validation,
+  `verify_none` spun the task watchdog. The websocket component's TLS is
+  unaffected: it runs in its own task, not through `otp_ssl`
 - **`ssl:recv/2` with a length blocks until exactly that many bytes arrive**,
   so a read loop asking for 4096 hangs on the response's last piece; read with
   length 0
@@ -262,9 +245,9 @@ Setup, flashing and the ESP-IDF workflow are in `README.md`.
 ## Provisioning
 
 - `tools/provision.py` is the only provisioning tool: wifi, NervesHub, the
-  chat URL and the UTC offset. It reads the badge's NVS, merges what you pass
-  and writes it back, so anything you do not pass is kept. `--dry-run` shows
-  the merge, `--forget-wifi` drops the saved network alone
+  chat URL (now unused) and the UTC offset. It reads the badge's NVS, merges
+  what you pass and writes it back, so anything you do not pass is kept.
+  `--dry-run` shows the merge, `--forget-wifi` drops the saved network alone
 - It needs ESP-IDF for the NVS parser and image generator. The generator lives
   inside IDF's own virtualenv, so the tool finds that interpreter itself
 - `provision.py` still shells out to esptool: `esptool`, then `esptool.py`,
