@@ -63,12 +63,32 @@ defmodule Badge.Allen do
               @relations |> Enum.map(&index[@inverse[&1]]) |> List.to_tuple()
             )
 
+  @symbols %{
+    precedes: "p",
+    meets: "m",
+    overlaps: "o",
+    finished_by: "F",
+    contains: "D",
+    starts: "s",
+    equals: "e",
+    started_by: "S",
+    during: "d",
+    finishes: "f",
+    overlapped_by: "O",
+    met_by: "M",
+    preceded_by: "P"
+  }
+
   @type relation :: atom
   @type interval :: %{from: term, to: term}
 
   @doc "The 13 relations in Allen's canonical order."
   @spec full() :: [relation]
   def full, do: @relations
+
+  @doc "A relation's one-letter symbol, as in `pmoFDseSdfOMP`."
+  @spec symbol(relation) :: binary
+  def symbol(relation), do: :maps.get(relation, @symbols)
 
   @doc """
   The relation from `a` to `b`.

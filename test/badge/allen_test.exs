@@ -8,6 +8,10 @@ defmodule Badge.AllenTest do
   defp at(minute), do: NaiveDateTime.add(~N[2026-10-01 09:00:00], minute * 60)
   defp span(from, to), do: %{from: at(from), to: at(to)}
 
+  test "symbols spell the canonical order" do
+    assert Enum.map(Allen.full(), &Allen.symbol/1) |> Enum.join() == "pmoFDseSdfOMP"
+  end
+
   describe "relation/2" do
     test "names all 13 relations against [10, 20)" do
       y = span(10, 20)

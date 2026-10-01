@@ -77,7 +77,7 @@ defmodule Badge.PagesTest do
                Badge.Page.Agent,
                Badge.Page.Cluster,
                Badge.Page.Console,
-               nil,
+               Badge.Page.Ntp,
                nil,
                nil
              ]
