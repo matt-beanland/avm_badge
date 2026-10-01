@@ -168,7 +168,7 @@ Setup, flashing and the ESP-IDF workflow are in `README.md`.
 
 ## Console page
 
-- `Badge.Page.Console` (square, on the third home screen) is a prompt for
+- `Badge.Page.Console` (cross, on the second home screen) is a prompt for
   `Badge.Elixir` (`new/0`, `feed/2`, `pending?/1`, `start/1`, `eval/2`,
   `stop/1`) and a worker process that answers `Badge.UI` with
   `{:console, worker, {:ok | :error, text}}`. Nothing evaluates in
