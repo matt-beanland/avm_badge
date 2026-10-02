@@ -210,7 +210,7 @@ defmodule Badge.Page.Ntp do
   defp act({:step, offset}, state, selection, _mono) do
     set_clock(offset)
     :io.format(~c"Ntp: stepped ~p us~n", [offset])
-    Wifi.clock_set()
+    Wifi.clock_set("NTP page")
     leave(state)
 
     now = :erlang.system_time(:microsecond)

@@ -24,6 +24,7 @@ defmodule Badge.Pages do
     Badge.Page.Agent,
     Badge.Page.Cluster,
     Badge.Page.Console,
+    Badge.Page.AshConf,
     Badge.Page.Ntp
   ]
 

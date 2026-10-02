@@ -214,6 +214,27 @@ Setup, flashing and the ESP-IDF workflow are in `README.md`.
   work (it needs `erpc`). Drive it from a local `iex` holding
   `tools/cluster.exs`
 
+## AshConf
+
+- `Badge.Page.AshConf` (circle, second home screen) is `Badge.Page.Schedule`
+  over `Badge.Schedule.AshConf`, compiled from
+  `assets/ashconf-2026-schedule.json`. A source answers `status/0`,
+  `entries/0` and `retry/0`. The goatmire programme and its fetcher are gone;
+  `assets/schedule.json` stays only as a test fixture
+- Times are Swedish local, converted through `Badge.Zone` for
+  `Europe/Stockholm`, not the badge's own zone. A clock before 2024 is unset
+- `Badge.Clock.Keeper` saves the wall time to NVS key `clock` once a minute.
+  Without SNTP the schedule runs from the saved time plus uptime, behind by
+  however long the badge was off. The title bar shows uptime until something
+  sets the system clock
+
+## Time
+
+- `:atomvm.posix_clock_settime/2` sets the system clock. Settings → Time
+  shows UTC, local time, zone, what set the clock (`Badge.Wifi.clock_set/1`)
+  and when, and takes a time by hand. SNTP asks the `sntp_host` NVS key's
+  server, default `pool.ntp.org`, read when the radio starts
+
 ## TLS from Erlang
 
 - This VM's `:ssl` does not survive a handshake to some servers —
@@ -243,6 +264,10 @@ Setup, flashing and the ESP-IDF workflow are in `README.md`.
   is what takes new firmware off trial
 - `Badge.Update.Link` reads flash and opens its socket in spawned processes,
   never its own: `status/0` is called from the render loop
+- The agent (hex 0.2.0) drops socket messages whose handle is not the one
+  `open` returned, and the driver's never is, so it times out with
+  `connect_timeout` after the TLS handshake. `Badge.Update.Transport` relays
+  the socket under its own pid; never drop the `transport:` option
 
 ## Provisioning
 
@@ -273,8 +298,9 @@ Setup, flashing and the ESP-IDF workflow are in `README.md`.
 
 ## Conventions
 
-- Commit messages: one line, capitalised, at most 50 characters, no body, no
-  trailers of any kind (no `Co-Authored-By`)
+- Commit messages: Conventional Commits (`feat:`, `fix:`, `chore:`…), one
+  line, lowercase after the prefix, at most 50 characters, no body, no
+  trailers of any kind (no `Co-Authored-By`). PR titles match
 - Comments: at most one line, local clarification only. No rationale, no
   measurements
 - Docstrings: multi-line is fine, but concise — how to use it, not why it was

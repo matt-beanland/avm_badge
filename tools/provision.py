@@ -18,6 +18,7 @@ badge.
     --chat-url    AVM_BADGE_SERVER_URL
     --ntp-hosts   BADGE_NTP_HOSTS     internal NTP sources, "host[/seconds] ..."
     --ntp-panic   BADGE_NTP_PANIC     largest step after the first, seconds; 0 off
+    --sntp-host   BADGE_SNTP_HOST     SNTP server; the firmware defaults this to pool.ntp.org
 
 `--forget-wifi` drops the saved network, keeping everything else.
 
@@ -57,6 +58,7 @@ SETTINGS = [
     ("utc_offset_m", "--utc-offset", "BADGE_UTC_OFFSET"),
     ("ntp_hosts", "--ntp-hosts", "BADGE_NTP_HOSTS"),
     ("ntp_panic", "--ntp-panic", "BADGE_NTP_PANIC"),
+    ("sntp_host", "--sntp-host", "BADGE_SNTP_HOST"),
 ]
 
 WIFI = ("wifi_ssid", "wifi_psk")

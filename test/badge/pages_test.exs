@@ -77,12 +77,14 @@ defmodule Badge.PagesTest do
                Badge.Page.Agent,
                Badge.Page.Cluster,
                Badge.Page.Console,
+               Badge.Page.AshConf,
                Badge.Page.Ntp,
-               nil,
                nil
              ]
 
       assert Pages.for_key(:cross, 1) == Badge.Page.Console
+      assert Pages.for_key(:circle, 1) == Badge.Page.AshConf
+      assert Pages.for_key(:clover, 1) == Badge.Page.Ntp
     end
 
     test "the text page is kept but unreachable, an example rather than a page" do
