@@ -17,7 +17,7 @@ defmodule Badge.Page.Ntp do
 
   While the page is open it disciplines the system clock once a second, as
   `Badge.Ntp.Discipline` decides: a step through
-  `:atomvm.posix_clock_settime/2`, or a slew of at most 500 µs. A step
+  `:atomvm.posix_clock_settime/2`, or a slew of at most 1 ms every 2 s. A step
   clears every source's samples and tells `Badge.Wifi` the clock is set; a
   slew moves them with the clock. The panic threshold comes from the
   `ntp_panic` setting, in seconds; P turns it off or on for the visit.
@@ -55,6 +55,7 @@ defmodule Badge.Page.Ntp do
   @wifi_every 60_000
   @resync_gap 16_000
   @discipline_every 1_000
+  @settime_lag 650
   @phi_ppm 15
 
   @impl true
@@ -263,8 +264,9 @@ defmodule Badge.Page.Ntp do
 
   defp act(:none, state, _selection, _mono), do: %{state | note: nil}
 
+  # How far behind its target a clock set lands, in µs.
   defp set_clock(micros) do
-    target = :erlang.system_time(:microsecond) + micros
+    target = :erlang.system_time(:microsecond) + micros + @settime_lag
 
     :atomvm.posix_clock_settime(
       :realtime,

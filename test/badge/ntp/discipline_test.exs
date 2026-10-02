@@ -23,9 +23,18 @@ defmodule Badge.Ntp.DisciplineTest do
     assert {:none, _} = Discipline.decide(Discipline.new(), synced(-2_000, 3_000), true, 0)
   end
 
-  test "a small offset is slewed, at most 500 µs at a time" do
-    assert {{:slew, 500}, _} = Discipline.decide(Discipline.new(), synced(9_000, 11_000), true, 0)
+  test "a small offset is slewed, at most 1 ms at a time" do
+    assert {{:slew, 1_000}, _} =
+             Discipline.decide(Discipline.new(), synced(9_000, 11_000), true, 0)
+
     assert {{:slew, -300}, _} = Discipline.decide(Discipline.new(), synced(-310, -290), true, 0)
+  end
+
+  test "slews come at most every 2 s" do
+    {{:slew, 1_000}, d} = Discipline.decide(Discipline.new(), synced(9_000, 11_000), true, 10_000)
+
+    assert {:none, d} = Discipline.decide(d, synced(8_000, 10_000), true, 11_000)
+    assert {{:slew, 1_000}, _} = Discipline.decide(d, synced(8_000, 10_000), true, 12_000)
   end
 
   test "a large offset is a spike for 10 s, then a step" do

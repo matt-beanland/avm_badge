@@ -8,8 +8,8 @@ defmodule Badge.Ntp.Discipline do
   - An offset of 128 ms or more is a spike until it has lasted 10 s, then a
     step. With the panic threshold on, one beyond it (1000 s unless set
     otherwise) is refused instead.
-  - A smaller offset is slewed, at most 500 µs per decision, while the
-    local clock lies outside the result; inside it, nothing is done.
+  - A smaller offset is slewed, at most 1 ms and at most every 2 s, while
+    the local clock lies outside the result; inside it, nothing is done.
 
   `decide/4` returns the action and the next state: `:none`, `:spike` (a
   spike has just begun), `:wait`, `:panic`, `{:step, micros}` or
@@ -21,10 +21,11 @@ defmodule Badge.Ntp.Discipline do
   @step 128_000
   @stepout 10_000
   @panic 1_000_000_000
-  @slew 500
+  @slew 1_000
+  @slew_every 2_000
   @inside [:during, :starts, :finishes, :equals]
 
-  @type t :: %{spike: integer | nil, panic: boolean, limit: pos_integer}
+  @type t :: %{spike: integer | nil, slewed: integer | nil, panic: boolean, limit: pos_integer}
   @type action :: :none | :spike | :wait | :panic | {:step, integer} | {:slew, integer}
 
   @doc """
@@ -35,7 +36,7 @@ defmodule Badge.Ntp.Discipline do
   """
   @spec new(non_neg_integer) :: t
   def new(seconds \\ 1_000) do
-    %{spike: nil, panic: seconds > 0, limit: max(seconds, 1) * 1_000_000}
+    %{spike: nil, slewed: nil, panic: seconds > 0, limit: max(seconds, 1) * 1_000_000}
   end
 
   @doc "The panic threshold in seconds for an `ntp_panic` setting."
@@ -62,7 +63,7 @@ defmodule Badge.Ntp.Discipline do
 
     cond do
       not set? -> {{:step, offset}, calm}
-      abs(offset) < @step -> {slew(offset, result), calm}
+      abs(offset) < @step -> slew(offset, result, calm, now)
       discipline.panic and abs(offset) > discipline.limit -> {:panic, calm}
       discipline.spike == nil -> {:spike, %{discipline | spike: now}}
       now - discipline.spike >= @stepout -> {{:step, offset}, calm}
@@ -72,9 +73,16 @@ defmodule Badge.Ntp.Discipline do
 
   def decide(discipline, _unsynced, _set?, _now), do: {:none, %{discipline | spike: nil}}
 
-  defp slew(offset, result) do
-    if :lists.member(Allen.relation(%{from: 0, to: 1}, result), @inside),
-      do: :none,
-      else: {:slew, max(-@slew, min(@slew, offset))}
+  defp slew(offset, result, discipline, now) do
+    cond do
+      :lists.member(Allen.relation(%{from: 0, to: 1}, result), @inside) ->
+        {:none, discipline}
+
+      discipline.slewed != nil and now - discipline.slewed < @slew_every ->
+        {:none, discipline}
+
+      true ->
+        {{:slew, max(-@slew, min(@slew, offset))}, %{discipline | slewed: now}}
+    end
   end
 end
