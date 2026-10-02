@@ -528,7 +528,8 @@ defmodule Badge.Update.Link do
       firmware_trial: :off,
       firmware: {:metadata, state.metadata},
       console: true,
-      extensions: :all
+      extensions: :all,
+      transport: Badge.Update.Transport
     ]
 
     spawn(fn -> send(link, {:agent, NervesHubLink.start(options)}) end)

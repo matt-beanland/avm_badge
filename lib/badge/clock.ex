@@ -55,6 +55,34 @@ defmodule Badge.Clock do
     epoch_seconds + offset_minutes * @minute
   end
 
+  @doc """
+  The wall time a saved reading puts the start of this boot at, given the
+  uptime in seconds when it was read, or nil when nothing usable was saved.
+  """
+  @spec restore(binary | nil, integer) :: integer | nil
+  def restore(nil, _uptime), do: nil
+
+  def restore(saved, uptime) do
+    case Badge.Schedule.clock_set?(digits(saved, 0)) do
+      true -> digits(saved, 0) - uptime
+      false -> nil
+    end
+  end
+
+  @doc """
+  The best UTC reading to hand: the system clock once it is set, else the
+  restored start of this boot moved on by the uptime.
+  """
+  @spec estimate(integer, integer, integer | nil) :: integer
+  def estimate(system, _uptime, nil), do: system
+
+  def estimate(system, uptime, base) do
+    case Badge.Schedule.clock_set?(system) do
+      true -> system
+      false -> base + uptime
+    end
+  end
+
   defp pad(value) when value < 10, do: "0" <> :erlang.integer_to_binary(value)
   defp pad(value), do: :erlang.integer_to_binary(value)
 

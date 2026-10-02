@@ -1,0 +1,116 @@
+{
+  "event": "Ash Conference 2026",
+  "site": "https://2026.goatmire.com",
+  "days": [
+    {
+      "date": "2026-10-03",
+      "label": "AshConf 2026",
+      "spaces": [
+        {
+          "name": "Large hall",
+          "sessions": [
+            {
+              "title": "Registration & Welcome",
+              "start_time": "09:45",
+              "end_time": "10:15"
+            },
+            {
+              "title": "Adoption of Ash in a Mature & Complex Codebase",
+              "start_time": "10:15",
+              "end_time": "11:00",
+              "speakers": [
+                {
+                  "name": "AJ Jetha"
+                }
+              ]
+            },
+            {
+              "title": "When Time Meets State",
+              "start_time": "11:00",
+              "end_time": "11:30",
+              "speakers": [
+                {
+                  "name": "Conor Sinclair",
+                  "url": "https://2026.goatmire.com/speaker/conor-sinclair"
+                }
+              ]
+            },
+            {
+              "title": "Ash Typescript",
+              "start_time": "11:30",
+              "end_time": "12:00",
+              "speakers": [
+                {
+                  "name": "Torkild Kjevik"
+                }
+              ]
+            },
+            {
+              "title": "Networking Lunch",
+              "start_time": "12:00",
+              "end_time": "13:00"
+            },
+            {
+              "title": "Designing human-computer interactions with Ash",
+              "start_time": "13:00",
+              "end_time": "13:30",
+              "speakers": [
+                {
+                  "name": "Alex Slade"
+                }
+              ]
+            },
+            {
+              "title": "AshRemote + AshMultiDataLayer",
+              "start_time": "13:30",
+              "end_time": "14:00",
+              "speakers": [
+                {
+                  "name": "Barnabas Jovanovics",
+                  "url": "https://2026.goatmire.com/speaker/barnabas-jovanovics"
+                }
+              ]
+            },
+            {
+              "title": "Break",
+              "start_time": "14:00",
+              "end_time": "14:30"
+            },
+            {
+              "title": "Paging Before the Customer Notices: Declarative Business Metrics",
+              "start_time": "14:30",
+              "end_time": "15:00",
+              "speakers": [
+                {
+                  "name": "Maciej Matecki"
+                }
+              ]
+            },
+            {
+              "title": "Precision Domain Modeling",
+              "start_time": "15:00",
+              "end_time": "15:30",
+              "speakers": [
+                {
+                  "name": "Josh Price",
+                  "url": "https://2026.goatmire.com/speaker/josh-price"
+                }
+              ]
+            },
+            {
+              "title": "Closing Remarks",
+              "start_time": "15:30",
+              "end_time": "16:00",
+              "speakers": [
+                {
+                  "name": "Zach Daniel",
+                  "url": "https://2026.goatmire.com/speaker/zach-daniel"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

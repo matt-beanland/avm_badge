@@ -144,4 +144,34 @@ defmodule Badge.ClockTest do
       assert div(320 - width, 2) + width <= 276
     end
   end
+
+  describe "restore/2" do
+    test "places the saved moment at the time it was read" do
+      assert Clock.restore("1790000000", 30) == 1_789_999_970
+    end
+
+    test "nothing saved, or something unreadable, gives nil" do
+      assert Clock.restore(nil, 30) == nil
+      assert Clock.restore("", 30) == nil
+      assert Clock.restore("12ab", 30) == nil
+    end
+
+    test "a saved moment from before the clock could be set gives nil" do
+      assert Clock.restore("1000", 30) == nil
+    end
+  end
+
+  describe "estimate/3" do
+    test "a set system clock wins over the saved one" do
+      assert Clock.estimate(1_790_000_000, 50, 1_700_000_000) == 1_790_000_000
+    end
+
+    test "an unset clock carries on from the saved moment by the uptime" do
+      assert Clock.estimate(50, 50, 1_789_999_970) == 1_790_000_020
+    end
+
+    test "with nothing saved the unset clock is passed through" do
+      assert Clock.estimate(50, 50, nil) == 50
+    end
+  end
 end

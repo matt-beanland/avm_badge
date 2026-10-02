@@ -23,7 +23,8 @@ defmodule Badge.Pages do
     Badge.Page.Sensors,
     Badge.Page.Agent,
     Badge.Page.Cluster,
-    Badge.Page.Console
+    Badge.Page.Console,
+    Badge.Page.AshConf
   ]
 
   @per_screen length(@keys)
