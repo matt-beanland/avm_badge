@@ -18,7 +18,7 @@ defmodule Badge.Power do
   @samples 64
 
   # Ticks between status lines.
-  @report 15
+  @report 150
 
   # VBUS above this is treated as USB present.
   @usb_present_mv 4_000
