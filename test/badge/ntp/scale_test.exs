@@ -7,14 +7,30 @@ defmodule Badge.Ntp.ScaleTest do
     assert Scale.x(0) == Scale.centre()
   end
 
-  test "the middle is linear over ±10 ms" do
-    assert Scale.x(5_000) - Scale.centre() == 30
-    assert Scale.x(10_000) - Scale.centre() == 60
-    assert Scale.centre() - Scale.x(-10_000) == 60
+  test "the middle is linear over ±20 ms" do
+    assert Scale.x(10_000) - Scale.centre() == 30
+    assert Scale.x(20_000) - Scale.centre() == 60
+    assert Scale.centre() - Scale.x(-20_000) == 60
+  end
+
+  test "the log zone carries on from the linear edge" do
+    assert Scale.x(20_001) - Scale.centre() == 60
+    assert Scale.x(100_000) - Scale.centre() > 60
   end
 
   test "it is symmetric and never decreasing out to the edges" do
-    offsets = [0, 1, 999, 10_000, 10_001, 1_000_000, 3_600_000_000, 1_000_000_000_000_000]
+    offsets = [
+      0,
+      1,
+      999,
+      20_000,
+      20_001,
+      99_999,
+      100_000,
+      1_000_000,
+      3_600_000_000,
+      1_000_000_000_000_000
+    ]
 
     columns = Enum.map(offsets, &Scale.x/1)
     assert columns == Enum.sort(columns)

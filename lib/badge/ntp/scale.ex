@@ -1,6 +1,6 @@
 defmodule Badge.Ntp.Scale do
   @moduledoc """
-  The NTP page's fixed time axis: linear over ±10 ms around the centre, then
+  The NTP page's fixed time axis: linear over ±20 ms around the centre, then
   one equal step per decade out to 10^16 µs (about 300 years), clamped
   beyond. It never rescales.
 
@@ -14,15 +14,19 @@ defmodule Badge.Ntp.Scale do
   @centre div(@left + @right, 2)
   @half @centre - @left
   @inner 60
-  @linear 10_000
+  @linear 20_000
   @first_decade 4
   @last_decade 16
 
-  # {10^k µs, pixels from the centre}, one row per decade beyond the linear zone.
-  @decades (for k <- @first_decade..@last_decade do
-              {Integer.pow(10, k),
-               @inner + div((k - @first_decade) * (@half - @inner), @last_decade - @first_decade)}
-            end)
+  # {µs, pixels from the centre}: the linear zone's edge, then one row per decade.
+  @decades [{@linear, @inner}] ++
+             for(
+               k <- (@first_decade + 1)..@last_decade,
+               do:
+                 {Integer.pow(10, k),
+                  @inner +
+                    div((k - @first_decade) * (@half - @inner), @last_decade - @first_decade)}
+             )
 
   @ticks [{"1s", 1_000_000}, {"1h", 3_600_000_000}, {"1y", 31_557_600_000_000}]
 
