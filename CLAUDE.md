@@ -290,8 +290,9 @@ Setup, flashing and the ESP-IDF workflow are in `README.md`.
 
 ## Conventions
 
-- Commit messages: one line, capitalised, at most 50 characters, no body, no
-  trailers of any kind (no `Co-Authored-By`)
+- Commit messages: Conventional Commits (`feat:`, `fix:`, `chore:`…), one
+  line, lowercase after the prefix, at most 50 characters, no body, no
+  trailers of any kind (no `Co-Authored-By`). PR titles match
 - Comments: at most one line, local clarification only. No rationale, no
   measurements
 - Docstrings: multi-line is fine, but concise — how to use it, not why it was
