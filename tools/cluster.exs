@@ -6,7 +6,7 @@
 #
 #     iex --name host@<your-lan-ip> --cookie <cookie> tools/cluster.exs
 #
-# where <cookie> is the one the badge's Cluster page shows, goat-<12 hex>.
+# where <cookie> is the one the badge's Cluster page shows, diffo-dev by default.
 #
 # Then, with the badge's Cluster app joined:
 #

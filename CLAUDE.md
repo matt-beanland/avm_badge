@@ -200,9 +200,9 @@ Setup, flashing and the ESP-IDF workflow are in `README.md`.
 
 - `Badge.Page.Cluster` joins the badge to an Erlang cluster; the node stays up
   after the page is left, unlike the other links. The node is `badge@<ip>`, a
-  long name, and the cookie is the `dist_cookie` NVS key: `goat-` and 12
-  random hex digits, made on first start. There is no shared default, since
-  anyone on the wifi holding it can `rpc` into the badge
+  long name, and the cookie is the `dist_cookie` NVS key, `diffo-dev` unless
+  set otherwise. `slim` makes a random `goat-` cookie instead; this branch
+  shares one so our badges cluster without setup
 - The app starts `epmd` itself: `net_kernel_sup` starts `erl_epmd`, the
   *client*, so without `epmd:start_link/1` nothing answers which port the node
   is on
