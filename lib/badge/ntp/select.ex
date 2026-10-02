@@ -10,7 +10,9 @@ defmodule Badge.Ntp.Select do
 
   Truechimers are the entries the result lies within (`s e d f` from the
   result); falsetickers are disjoint from it. The system peer is the
-  truechimer with the lowest stratum, then the shortest root distance.
+  truechimer with the lowest stratum, then the narrowest interval, which
+  holds its round trip, root distance and age as NTP's synchronisation
+  distance does.
 
       iex> a = %{id: :a, from: 0, to: 10}
       iex> b = %{id: :b, from: 4, to: 12}
@@ -103,5 +105,5 @@ defmodule Badge.Ntp.Select do
     )
   end
 
-  defp rank(entry), do: {:maps.get(:stratum, entry, 16), :maps.get(:root, entry, 0)}
+  defp rank(entry), do: {:maps.get(:stratum, entry, 16), entry.to - entry.from}
 end

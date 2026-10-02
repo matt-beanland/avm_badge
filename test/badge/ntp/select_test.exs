@@ -74,7 +74,7 @@ defmodule Badge.Ntp.SelectTest do
     assert selection.result == %{from: 20, to: 60}
   end
 
-  test "the system peer is the truechimer with the lowest stratum, then root distance" do
+  test "the system peer is the truechimer with the lowest stratum, then the narrowest interval" do
     selection =
       Select.select([
         at(:a, 0, 100, stratum: 2, root: 50),
@@ -83,5 +83,15 @@ defmodule Badge.Ntp.SelectTest do
       ])
 
     assert selection.peer.id == :c
+  end
+
+  test "a near stratum 1 beats a far one that reports a smaller root distance" do
+    selection =
+      Select.select([
+        at(:google, -56_000, 28_000, stratum: 1, root: 0),
+        at(:gulou, -12_640, 12_640, stratum: 1, root: 37)
+      ])
+
+    assert selection.peer.id == :gulou
   end
 end
